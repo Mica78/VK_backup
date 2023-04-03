@@ -163,6 +163,8 @@ class YaDiskUploader:
                 sleep(3000)
                 continue
             else:
+                if response.status_code != 200:
+                    return response.json()['message']
                 return data, response
 
     @logger
@@ -184,7 +186,7 @@ class YaDiskUploader:
                     if int(res_photo_url[1].headers['Content-Length']) != len(res_photo_url[1].content):
                         continue
                     res_href = self.get_response(data=filename, session=sess, url= href_url, headers=self.auth, params=params)
-                    if res_href[1].status_code != 200 or res_photo_url[1].status_code != 200:
+                    if isinstance(res_href[1], str) or res_href[1].status_code != 200 or res_photo_url[1].status_code != 200:
                         continue
                     else:
                         try:
