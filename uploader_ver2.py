@@ -15,6 +15,7 @@ def logger(func):
         else:
             print(str(func).split()[1], ': ', f'data {result[0]} status: {result[1].status_code}')
         return result
+
     return wrapper
 
 
@@ -68,13 +69,13 @@ class VK:
         url = "https://api.vk.com/method/photos.get"
         idx_offset = 0
         params = {
-                'owner_id': f'{self.id}',
-                'album_id': album_id,
-                'extended': 1,
-                'offset': idx_offset * 1000,
-                'photo_sizes': 1,
-                'feed_type': 'photo'
-                }
+            'owner_id': f'{self.id}',
+            'album_id': album_id,
+            'extended': 1,
+            'offset': idx_offset * 1000,
+            'photo_sizes': 1,
+            'feed_type': 'photo'
+        }
         with requests.Session() as session:
             session.headers = self.auth
             session.params = {**self.ver, **params}
@@ -113,7 +114,7 @@ class VK:
                                 filename = filename + '_' + str(item['date'])
                         self.data.append({'filename': filename, 'size': photo_size, 'url': photo_url})
                     if len(response.json()['response']['items']) <= number_of_photos or \
-                    len(self.data) == number_of_photos:
+                            len(self.data) == number_of_photos:
                         return f'End of data. Received {len(self.data)} foto/fotos'
                     sleep(0.35)
                     idx_offset += 1
@@ -128,19 +129,19 @@ class YaDiskUploader:
         self.path_yadisk = f'/Загрузки/VKid_{self.vk_id}'
         self.url = 'https://cloud-api.yandex.net/v1/disk/resources/'
         self.timeout = timeout
+        self.result = []
 
     @logger
     def create_folder(self, folder_name=str(datetime.today()).split()[0]):
         if not self.data:
             return 'No data from VK'
-            exit()
         self.path_yadisk = f'{self.path_yadisk}_{folder_name}/'
         try:
             response = requests.put(
-                                    self.url,
-                                    headers=self.auth,
-                                    params={'path': self.path_yadisk}
-                                    )
+                self.url,
+                headers=self.auth,
+                params={'path': self.path_yadisk}
+            )
         except requests.exceptions.Timeout:
             return f'Loading timeout {self.timeout} sec'
         except ConnectionError:
@@ -160,8 +161,8 @@ class YaDiskUploader:
                 response = session.get(url, headers=headers, params=params, timeout=self.timeout)
             except requests.exceptions.Timeout:
                 return f'{data}: timeout {self.timeout} sec'
-            except ConnectionError:
-                sleep(3000)
+            except Exception:
+                sleep(20)
                 continue
             else:
                 if response.status_code != 200:
@@ -170,7 +171,7 @@ class YaDiskUploader:
 
     @logger
     def send_photo_to_ya_disk(self):
-        self.result = []
+        self.result.clear()
         href_url = f'{self.url}upload'
         with requests.Session() as sess:
             with requests.Session() as sess2:
@@ -180,9 +181,9 @@ class YaDiskUploader:
                     filename = data['filename'] + '.' + file_ext
 
                     params = {
-                            'path': self.path_yadisk + filename,
-                            'overwrite': 'true'
-                        }
+                        'path': self.path_yadisk + filename,
+                        'overwrite': 'true'
+                    }
 
                     if int(res_photo_url[1].headers['Content-Length']) != len(res_photo_url[1].content):
                         continue
@@ -193,28 +194,22 @@ class YaDiskUploader:
                         headers=self.auth,
                         params=params
                     )
-                    if isinstance(res_href[1], str) or res_href[1].status_code != 200 or\
-                    res_photo_url[1].status_code != 200:
+                    if isinstance(res_href[1], str) or res_href[1].status_code != 200 or \
+                            res_photo_url[1].status_code != 200:
                         continue
                     else:
-                        try:
-                            res_to_upload = sess.put(res_href[1].json()["href"], data=res_photo_url[1].content)
-                        except Exception:
-                            sleep(20)
+                        for i in range(3):
                             try:
                                 res_to_upload = sess.put(res_href[1].json()["href"], data=res_photo_url[1].content)
                             except Exception:
+                                sleep(20)
                                 continue
                             else:
                                 if res_to_upload.status_code == 201 or res_to_upload.status_code == 202:
                                     self.result.append({'file': filename, 'size': data['size']})
                                 else:
                                     return f'Error YaDisk {res_to_upload.status_code}'
-                        else:
-                            if res_to_upload.status_code == 201 or res_to_upload.status_code == 202:
-                                self.result.append({'file': filename, 'size': data['size']})
-                            else:
-                                return f'Error YaDisk {res_to_upload.status_code}'
+                                break
                     sleep(0.35)
                 return f'Uploaded {len(self.result)} files.\nEnd of upload.'
 
@@ -242,5 +237,5 @@ if __name__ == '__main__':
     usr_id = '16685737'
     usr_id = 'https://vk.com/netology'
     album = 'wall'
-    album = 'profile'
-    main(usr_id, number_of_photo=10, album=album)
+    # album = 'profile'
+    main(usr_id, number_of_photo=5, album=album)
