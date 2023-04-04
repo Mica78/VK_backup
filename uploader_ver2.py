@@ -212,7 +212,7 @@ class YaDiskUploader:
 
     def write_result_json(self, file=None):
         if not file:
-            with open (self.vk_id, "w") as file:
+            with open (f'{self.vk_id}.json', "w") as file:
                 json.dump(self.result, file, indent=4)
         else:
             with open (file, "w") as file:
