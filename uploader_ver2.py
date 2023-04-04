@@ -22,9 +22,9 @@ class Token:
     def __init__(self, flag='VK', token=None):
         self.flag = flag
         self.__token = token
-        if self.token == None and self.flag == 'VK':
+        if self.token is None and self.flag == 'VK':
             self.get_vk_token()
-        elif self.token == None and self.flag == 'YA':
+        elif self.token is None and self.flag == 'YA':
             self.get_ya_token()
 
     @property
@@ -112,7 +112,8 @@ class VK:
                             if filename in data.values():
                                 filename = filename + '_' + str(item['date'])
                         self.data.append({'filename': filename, 'size': photo_size, 'url': photo_url})
-                    if len(response.json()['response']['items']) <= number_of_photos or len(self.data) == number_of_photos:
+                    if len(response.json()['response']['items']) <= number_of_photos or \
+                    len(self.data) == number_of_photos:
                         return f'End of data. Received {len(self.data)} foto/fotos'
                     sleep(0.35)
                     idx_offset += 1
@@ -141,9 +142,9 @@ class YaDiskUploader:
                                     params={'path': self.path_yadisk}
                                     )
         except requests.exceptions.Timeout:
-                return f'Loading timeout {self.timeout} sec'
+            return f'Loading timeout {self.timeout} sec'
         except ConnectionError:
-                return f'{datetime.now()}: Connection failed. Check connection'
+            return f'{datetime.now()}: Connection failed. Check connection'
         else:
             if response.status_code == 201:
                 return f'Directory {self.path_yadisk} created 201'
@@ -158,7 +159,7 @@ class YaDiskUploader:
             try:
                 response = session.get(url, headers=headers, params=params, timeout=self.timeout)
             except requests.exceptions.Timeout:
-                    return f'{data}: timeout {self.timeout} sec'
+                return f'{data}: timeout {self.timeout} sec'
             except ConnectionError:
                 sleep(3000)
                 continue
@@ -185,8 +186,15 @@ class YaDiskUploader:
 
                     if int(res_photo_url[1].headers['Content-Length']) != len(res_photo_url[1].content):
                         continue
-                    res_href = self.get_response(data=filename, session=sess, url= href_url, headers=self.auth, params=params)
-                    if isinstance(res_href[1], str) or res_href[1].status_code != 200 or res_photo_url[1].status_code != 200:
+                    res_href = self.get_response(
+                        data=filename,
+                        session=sess,
+                        url=href_url,
+                        headers=self.auth,
+                        params=params
+                    )
+                    if isinstance(res_href[1], str) or res_href[1].status_code != 200 or\
+                    res_photo_url[1].status_code != 200:
                         continue
                     else:
                         try:
@@ -204,7 +212,7 @@ class YaDiskUploader:
                                     return f'Error YaDisk {res_to_upload.status_code}'
                         else:
                             if res_to_upload.status_code == 201 or res_to_upload.status_code == 202:
-                                    self.result.append({'file': filename, 'size': data['size']})
+                                self.result.append({'file': filename, 'size': data['size']})
                             else:
                                 return f'Error YaDisk {res_to_upload.status_code}'
                     sleep(0.35)
@@ -212,10 +220,10 @@ class YaDiskUploader:
 
     def write_result_json(self, file=None):
         if not file:
-            with open (f'{self.vk_id}.json', "w") as file:
+            with open(f'{self.vk_id}.json', "w") as file:
                 json.dump(self.result, file, indent=4)
         else:
-            with open (file, "w") as file:
+            with open(file, "w") as file:
                 json.dump(self.result, file, indent=4)
 
 
