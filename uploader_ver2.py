@@ -15,6 +15,7 @@ def logger(func):
         else:
             print(str(func).split()[1], ': ', f'data {result[0]} status: {result[1].status_code}')
         return result
+
     return wrapper
 
 
